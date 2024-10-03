@@ -237,7 +237,7 @@ template<typename U> U rsqrt(U v) {
   return U(1) / sqrt(v);
 }
 template<> float rsqrt(float v) {
-  return rsqrtf(v);
+  return rsqrt(v);
 }
 template<> double rsqrt(double v) {
   return rsqrt(v);

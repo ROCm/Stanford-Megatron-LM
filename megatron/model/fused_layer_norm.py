@@ -18,8 +18,8 @@ try:
 except:
     HAVE_PERSIST_LAYER_NORM = False
 
-global fused_mix_prec_layer_norm_cuda
-fused_mix_prec_layer_norm_cuda = None
+global fused_layer_norm_cuda
+fused_layer_norm_cuda = None
 
 
 class FusedLayerNormAffineFunction(torch.autograd.Function):
@@ -32,7 +32,7 @@ class FusedLayerNormAffineFunction(torch.autograd.Function):
     input_ = input.contiguous()
     weight_ = weight.contiguous()
     bias_ = bias.contiguous()
-    output, mean, invvar = fused_mix_prec_layer_norm_cuda.forward_affine(
+    output, mean, invvar = fused_layer_norm_cuda.forward_affine(
         input_, ctx.normalized_shape, weight_, bias_, ctx.eps)
     ctx.save_for_backward(input_, weight_, bias_, mean, invvar)
 
@@ -45,7 +45,7 @@ class FusedLayerNormAffineFunction(torch.autograd.Function):
     input_, weight_, bias_, mean, invvar = ctx.saved_tensors
     grad_input = grad_weight = grad_bias = None
     grad_input, grad_weight, grad_bias \
-      = fused_mix_prec_layer_norm_cuda.backward_affine(
+      = fused_layer_norm_cuda.backward_affine(
         grad_output.contiguous(), mean, invvar,
         input_, ctx.normalized_shape,
         weight_, bias_, ctx.eps)
@@ -61,9 +61,9 @@ class MixedFusedLayerNorm(torch.nn.Module):
                sequence_parallel=False):
         super(MixedFusedLayerNorm, self).__init__()
 
-        global fused_mix_prec_layer_norm_cuda
-        fused_mix_prec_layer_norm_cuda = importlib.import_module(
-          "fused_mix_prec_layer_norm_cuda")
+        global fused_layer_norm_cuda
+        fused_layer_norm_cuda = importlib.import_module(
+          "fused_layer_norm_cuda")
 
         # List of hiddens sizes supported in the persistent layer norm kernel
         # If the hidden size is not supported, fall back to the non-persistent

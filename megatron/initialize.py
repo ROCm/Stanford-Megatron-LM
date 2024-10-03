@@ -1,4 +1,5 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+# Modifications:  Copyright Advanced Micro Devices, Inc.  SPDX License:  MIT.
 
 """Megatron initialization."""
 
@@ -8,6 +9,8 @@ import time
 
 import numpy as np
 import torch
+from torch.utils.cpp_extension import ROCM_HOME
+
 from datetime import timedelta
 
 from megatron import fused_kernels
@@ -21,6 +24,7 @@ from megatron.global_vars import set_global_variables
 from megatron.model.transformer import bias_dropout_add_fused_train
 from megatron.model.fused_bias_gelu import bias_gelu
 
+is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
 def initialize_megatron(extra_args_provider=None, args_defaults={},
                         ignore_unknown_args=False, allow_no_cuda=False):
@@ -34,7 +38,7 @@ def initialize_megatron(extra_args_provider=None, args_defaults={},
     """
     if not allow_no_cuda:
         # Make sure cuda is available.
-        assert torch.cuda.is_available(), 'Megatron requires CUDA.'
+        assert torch.cuda.is_available(), 'Megatron requires CUDA/ROCm.'
 
     # Parse arguments
     args = parse_args(extra_args_provider, ignore_unknown_args)
@@ -234,7 +238,7 @@ def set_jit_fusion_options():
     # flags required to enable jit fusion kernels
     TORCH_MAJOR = int(torch.__version__.split('.')[0])
     TORCH_MINOR = int(torch.__version__.split('.')[1])
-    if (TORCH_MAJOR > 1) or (TORCH_MAJOR == 1 and TORCH_MINOR >= 10):
+    if (TORCH_MAJOR > 1) or (TORCH_MAJOR == 1 and TORCH_MINOR >= 10) and not is_rocm_pytorch:
         # nvfuser
         torch._C._jit_set_profiling_executor(True)
         torch._C._jit_set_profiling_mode(True)
