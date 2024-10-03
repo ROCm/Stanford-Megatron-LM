@@ -9,10 +9,10 @@ export LOCAL_RANK=0
 RANK=0
 WORLD_SIZE=1
 
-DATA_PATH=/megatron/Stanford-Megatron-LM/tools/my-gpt2_text_document
-CHECKPOINT_PATH=/megatron/Stanford-Megatron-LM/checkpoints/
-VOCAB_FILE=/megatron/Stanford-Megatron-LM/tools/gpt2-vocab.json
-MERGE_FILE=/megatron/Stanford-Megatron-LM/tools/gpt2-merges.txt
+DATA_PATH=<Please enter path here>
+CHECKPOINT_PATH=<Please enter path here>
+VOCAB_FILE=<Please enter path here>
+MERGE_FILE=<Please enter path here>
 
 python pretrain_gpt.py \
        --num-layers 24 \

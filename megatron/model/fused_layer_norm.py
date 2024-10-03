@@ -1,4 +1,5 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+# Modifications:  Copyright Advanced Micro Devices, Inc.  SPDX License:  MIT.
 
 """This code is copied fron NVIDIA apex:
       https://github.com/NVIDIA/apex
