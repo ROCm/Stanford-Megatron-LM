@@ -4,9 +4,8 @@ WORKDIR /root/
 # Install the application dependencies
 RUN pip install regex nltk pybind11
 
-RUN git clone https://github.com/ROCm/Stanford-Megatron-LM.git && \
-    cd Stanford-Megatron-LM && \
+COPY . /root/Stanford-Megatron-LM
+
+RUN cd /root/Stanford-Megatron-LM && \
     git checkout rocm_6_3_patch && \
     ./apply_patch.sh
-
-CMD ["/bin/bash"]
