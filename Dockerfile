@@ -1,4 +1,4 @@
-FROM rocm/pytorch:rocm6.3_ubuntu24.04_py3.12_pytorch_release_2.4.0Add commentMore actions
+FROM rocm/pytorch:rocm6.3_ubuntu24.04_py3.12_pytorch_release_2.4.0
 WORKDIR /root/
 
 # Install the application dependencies
