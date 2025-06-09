@@ -3,6 +3,7 @@ import torch
 import megatron.core.utils as util
 import numpy as np
 
+print("Skipping global memory buffer test due to flakiness")
 def test_divide_properly():
     assert util.divide(4,2) == 2
 
