@@ -1,12 +1,14 @@
-FROM rocm/pytorch:rocm6.3_ubuntu24.04_py3.12_pytorch_release_2.4.0
+FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.7.1
 WORKDIR /root/
 
 # Install the application dependencies
 RUN pip install regex nltk pybind11
 
+RUN apt-get update && apt-get install -y ninja-build
+
 RUN git clone https://github.com/ROCm/Stanford-Megatron-LM.git && \
     cd Stanford-Megatron-LM && \
-    git checkout rocm_6_3_patch && \
+    git checkout users/peizhang56/rocm7-fix && \
     ./apply_patch.sh
 
 CMD ["/bin/bash"]

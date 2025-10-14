@@ -21,28 +21,36 @@ index 3b4f822..03a696b 100644
      }
  
 diff --git a/megatron/fused_kernels/fused_weight_gradient_dense.cu b/megatron/fused_kernels/fused_weight_gradient_dense.cu
-index 7dc10e6..4881a6a 100644
+index 7dc10e6..b9ca3ef 100644
 --- a/megatron/fused_kernels/fused_weight_gradient_dense.cu
 +++ b/megatron/fused_kernels/fused_weight_gradient_dense.cu
-@@ -9,7 +9,18 @@
- /* Includes, cuda */
- #include <cublas_v2.h>
- #include <cuda_runtime.h>
-+#include <hipblas/hipblas.h>
+@@ -45,7 +45,7 @@ cublasStatus_t gemmex_wrapper(
+       C,
+       CUDA_R_32F,
+       ldc,
+-      CUDA_R_32F,
++      CUBLAS_COMPUTE_32F,
+       CUBLAS_GEMM_DEFAULT_TENSOR_OP);
+ }
  
-+#define CUDA_R_16BF HIP_R_16BF
-+#define CUDA_R_32F HIP_R_32F
-+#define CUBLAS_GEMM_DEFAULT_TENSOR_OP HIPBLAS_GEMM_DEFAULT
-+#define rocblas_gemmex hipblasGemmEx_v2
-+#define rocblas_status hipblasStatus_t
-+#define rocblas_handle hipblasHandle_t
-+#define rocblas_operation hipblasOperation_t
-+#define rocblas_get_stream hipblasGetStream
-+#define rocblas_operation_none HIPBLAS_OP_N
-+#define rocblas_operation_transpose HIPBLAS_OP_T
+@@ -83,7 +83,7 @@ cublasStatus_t gemmex_wrapper(
+       C,
+       CUDA_R_32F,
+       ldc,
+-      CUDA_R_32F,
++      CUBLAS_COMPUTE_32F,
+       CUBLAS_GEMM_DEFAULT_TENSOR_OP);
+ }
  
- // BF16 Tensor core wrapper around cublas GEMMEx
- cublasStatus_t gemmex_wrapper(
+@@ -121,7 +121,7 @@ cublasStatus_t gemmex_wrapper(
+       C,
+       CUDA_R_32F,
+       ldc,
+-      CUDA_R_32F,
++      CUBLAS_COMPUTE_32F,
+       CUBLAS_GEMM_DEFAULT_TENSOR_OP);
+ }
+ 
 diff --git a/megatron/fused_kernels/scaled_masked_softmax_cuda.cu b/megatron/fused_kernels/scaled_masked_softmax_cuda.cu
 index a8be57c..674db48 100644
 --- a/megatron/fused_kernels/scaled_masked_softmax_cuda.cu
@@ -92,3 +100,39 @@ index c10b7bf..366803f 100644
          torch._C._debug_set_autodiff_subgraph_inlining(False)
      else:
          # legacy pytorch fuser
+diff --git a/megatron/model/fused_layer_norm.py b/megatron/model/fused_layer_norm.py
+index a7115b0..28b0917 100644
+--- a/megatron/model/fused_layer_norm.py
++++ b/megatron/model/fused_layer_norm.py
+@@ -26,16 +26,20 @@ fused_layer_norm_cuda = None
+ class FusedLayerNormAffineFunction(torch.autograd.Function):
+ 
+   @staticmethod
+-  def forward(ctx, input, weight, bias, normalized_shape, eps):
++  def forward(ctx, input, weight, bias, normalized_shape, eps, memory_efficient=False):
+ 
+     ctx.normalized_shape = normalized_shape
+     ctx.eps = eps
++    ctx.memory_efficient = memory_efficient
+     input_ = input.contiguous()
+     weight_ = weight.contiguous()
+     bias_ = bias.contiguous()
+     output, mean, invvar = fused_layer_norm_cuda.forward_affine(
+         input_, ctx.normalized_shape, weight_, bias_, ctx.eps)
+-    ctx.save_for_backward(input_, weight_, bias_, mean, invvar)
++    if ctx.memory_efficient:
++        ctx.save_for_backward(input_, weight_, bias_, None, invvar)
++    else:
++        ctx.save_for_backward(output, weight_, bias_, mean, invvar)
+ 
+     return output
+ 
+@@ -49,7 +53,7 @@ class FusedLayerNormAffineFunction(torch.autograd.Function):
+       = fused_layer_norm_cuda.backward_affine(
+         grad_output.contiguous(), mean, invvar,
+         input_, ctx.normalized_shape,
+-        weight_, bias_, ctx.eps)
++        weight_, bias_, ctx.eps, ctx.memory_efficient)
+ 
+     return grad_input, grad_weight, grad_bias, None, None
+ 
