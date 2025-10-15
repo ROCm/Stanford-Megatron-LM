@@ -6,7 +6,8 @@ RUN pip install regex nltk pybind11
 
 RUN apt-get update && apt-get install -y ninja-build
 
-RUN git clone https://github.com/ROCm/Stanford-Megatron-LM.git && \
+RUN rm -rf Stanford-Megatron-LM && \
+    git clone https://github.com/ROCm/Stanford-Megatron-LM.git && \
     cd Stanford-Megatron-LM && \
     git checkout users/peizhang56/rocm7-fix && \
     ./apply_patch.sh
