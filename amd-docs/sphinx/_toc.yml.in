@@ -14,7 +14,7 @@ subtrees:
 
 - caption: Reference
   entries:
-  - url: https://epfllm.github.io/Megatron-LLM/#api
+  - url: https://epfllm.github.io/Megatron-LLM/
     title: API reference (upstream)
 
 - caption: About
