@@ -1,0 +1,27 @@
+defaults:
+  numbered: False
+  maxdepth: 6
+root: index
+subtrees:
+- entries:
+  - file: what-is-stanford-megatron-lm.rst
+    title: What is Stanford Megatron-LM?
+
+- caption: Install
+  entries:
+  - file: install/stanford-megatron-lm-install.rst
+    title: Install Stanford Megatron-LM
+
+- caption: Reference
+  entries:
+  - url: https://epfllm.github.io/Megatron-LLM/#api
+    title: API reference (upstream)
+
+- caption: About
+  entries:
+  - url: https://rocm.blogs.amd.com/artificial-intelligence/megablocks/README.html
+    title: ROCm Stanford Megatron-LM and Megablocks blog
+  - url: https://rocm.docs.amd.com/en/latest/contribute/contributing.html
+    title: Contribute to Stanford Megatron-LM
+  - file: about/license.rst
+    title: License
