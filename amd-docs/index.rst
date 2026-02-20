@@ -25,11 +25,11 @@ The Stanford Megatron-LM public repository is located at `https://github.com/ROC
 .. grid:: 2
   :gutter: 3
 
-   .. grid-item-card:: Install
+  .. grid-item-card:: Install
 
-      * :doc:`Install Stanford Megatron-LM <install/stanford-megatron-lm-install>`
+    * :doc:`Install Stanford Megatron-LM <install/stanford-megatron-lm-install>`
 
-   .. grid-item-card:: Reference
+  .. grid-item-card:: Reference
 
       * `API reference (upstream) <https://epfllm.github.io/Megatron-LLM/#api>`__
 
