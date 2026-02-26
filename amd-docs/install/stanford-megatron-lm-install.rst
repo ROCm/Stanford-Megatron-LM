@@ -179,6 +179,5 @@ Run a Stanford Megatron-LM example
 
 Use the example command ``pretrain_gpt.sh`` from the repository at `https://github.com/ROCm/Stanford-Megatron-LM/tree/main/examples <https://github.com/ROCm/Stanford-Megatron-LM/tree/main/examples>`__.
 
-For detailed steps, refer to the `Efficient MoE training on AMD ROCm: How to use Megablocks
-on AMD GPUs <https://rocm.blogs.amd.com/artificial-intelligence/megablocks/README.html>`__.
+For detailed steps, refer to the `Efficient MoE training on AMD ROCm <https://rocm.blogs.amd.com/artificial-intelligence/megablocks/README.html>`__ blog post.
 The blog mentions Megablocks, but you can run Stanford Megatron-LM with the same steps.
