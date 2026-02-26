@@ -21,7 +21,7 @@ subtrees:
   entries:
   - url: https://rocm.blogs.amd.com/artificial-intelligence/megablocks/README.html
     title: ROCm Stanford Megatron-LM and Megablocks blog
-  - url: https://rocm.docs.amd.com/en/latest/contribute/contributing.html
-    title: Contribute to Stanford Megatron-LM
+  - url: https://docs.nvidia.com/megatron-core/developer-guide/latest/developer/contribute.html
+    title: Contribute to Megatron-LM (upstream)
   - file: about/license.rst
     title: License

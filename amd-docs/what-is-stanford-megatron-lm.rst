@@ -20,38 +20,56 @@ pre-training transformer-based language models such as GPT (Decoder Only), BERT
 Features and use cases
 ====================================================================
 
-This section details models & features that are supported by Stanford Megatron-LM on ROCm.
+Stanford Megatron-LM provides the following key features:
 
-Models:
+- **Scalable Parallelism:** Employs data, tensor, and pipeline parallelism
+  to train massive transformer models efficiently across multi-GPU and
+  multi-node clusters on ROCm.
 
-* BERT
-* GPT
-* T5
-* ICT
+- **Memory Efficiency:** Uses mixed precision (FP16/BF16), activation
+  recomputation, gradient accumulation, and optimizer sharding to reduce
+  memory footprint while maintaining throughput.
 
-Features:
+- **Fused Transformer Kernels:** Leverages optimized attention and MLP
+  kernels to improve training speed, with support for large context lengths
+  and efficient KV cache management during evaluation.
 
-* Distributed Pre-training
-* Activation Checkpointing and Recomputation
-* Distributed Optimizer
-* Mixture-of-Experts
+- **Modular Components:** Offers modular building blocks for GPT-style
+  and encoder-decoder architectures, enabling reuse across pretraining,
+  fine-tuning, and evaluation pipelines.
+
+- **Robust I/O and Checkpointing:** Provides dataset streaming utilities,
+  efficient sharded checkpointing, and resumable training for long-running
+  jobs on distributed clusters.
+
+Stanford Megatron-LM is commonly used in the following scenarios:
+
+- **Large-Scale Pretraining:** Train dense transformer LLMs at enterprise
+  scale for multilingual and domain-specific corpora.
+
+- **Fine-Tuning and Adaptation:** Perform supervised fine-tuning and
+  alignment-focused training on specialized datasets.
+
+- **Research at Scale:** Experiment with parallelism strategies, deep
+  architectures, and long-context configurations on AMD Instinct GPUs.
+
+- **Evaluation and Benchmarking:** Run evaluation suites for throughput,
+  scaling efficiency, and accuracy across different model sizes and
+  hardware topologies.
 
 Why Stanford Megatron-LM?
 ====================================================================
 
-* The `Efficient MoE training on AMD ROCm: How-to use Megablocks on AMD GPUs 
-  <https://rocm.blogs.amd.com/artificial-intelligence/megablocks/README.html>`__ 
-  blog post guides how to leverage the ROCm platform for pre-training using the 
-  Megablocks framework. It introduces a streamlined approach for training Mixture-of-Experts 
-  (MoE) models using the Megablocks library on AMD hardware. Focusing on GPT-2, it 
-  demonstrates how block-sparse computations can enhance scalability and efficiency in MoE 
-  training. The guide provides step-by-step instructions for setting up the environment, 
-  including cloning the repository, building the Docker image, and running the training container. 
-  Additionally, it offers insights into utilizing the ``oscar-1GB.json`` dataset for pre-training 
-  language models. By leveraging Megablocks and the ROCm platform, you can optimize your MoE 
-  training workflows for large-scale transformer models.
+Stanford Megatron-LM is well suited for large-scale training for the following reasons:
 
-It features how to pre-process datasets and how to begin pre-training on AMD GPUs through:
+- Its **multi-dimensional parallelism** enables efficient scaling
+  from single-node to multi-rack clusters while keeping utilization high.
 
-* Single-GPU pre-training
-* Multi-GPU pre-training
+- **Training efficiency features** like mixed precision and activation
+  recomputation reduce memory and cost without sacrificing performance.
+
+- **Modular architecture** eases integration with existing data pipelines,
+  optimizers, and evaluation workflows.
+
+- **Production readiness** through robust checkpointing and orchestration
+  utilities supports long-running jobs on ROCm-powered clusters.
