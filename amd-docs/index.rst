@@ -25,7 +25,7 @@ It also offers distributed pre-training, activation checkpointing and recomputat
 a distributed optimizer, and mixture-of-experts support.
 
 Stanford Megatron-LM is part of the `ROCm-LLMExt toolkit
-<https://rocm.docs.amd.com/projects/rocm-llm-ext/en/docs-25.08/>`__.
+<https://rocm.docs.amd.com/projects/rocm-llmext/en/docs-25.08/>`__.
 
 The Stanford Megatron-LM public repository is located at `https://github.com/ROCm/Stanford-Megatron-LM <https://github.com/ROCm/Stanford-Megatron-LM>`__.
 
