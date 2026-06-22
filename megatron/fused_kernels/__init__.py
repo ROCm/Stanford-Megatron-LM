@@ -1,10 +1,13 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+# Modifications:  Copyright Advanced Micro Devices, Inc.  SPDX License:  MIT.
 
 import os
 import pathlib
 import subprocess
 
+import torch
 from torch.utils import cpp_extension
+from torch.utils.cpp_extension import ROCM_HOME
 
 # Setting this param to a list has a problem of generating different
 # compilation commands (with diferent order of architectures) and
@@ -18,12 +21,22 @@ def load(args):
 
     # Check if cuda 11 is installed for compute capability 8.0
     cc_flag = []
-    _, bare_metal_major, bare_metal_minor = _get_cuda_bare_metal_version(
-        cpp_extension.CUDA_HOME)
-    if int(bare_metal_major) >= 11:
-        cc_flag.append('-gencode')
-        cc_flag.append('arch=compute_80,code=sm_80')
-        if int(bare_metal_minor) >= 7:
+    if torch.version.hip is None:
+        _, bare_metal_major, bare_metal_minor = _get_cuda_bare_metal_version(
+            cpp_extension.CUDA_HOME)
+        if int(bare_metal_major) >= 11:
+            cc_flag.append('-gencode')
+            cc_flag.append('arch=compute_80,code=sm_80')
+            if int(bare_metal_minor) >= 1:
+                cc_flag.append('-gencode')
+                cc_flag.append('arch=compute_86,code=sm_86')
+            if int(bare_metal_minor) >= 4:
+                cc_flag.append('-gencode')
+                cc_flag.append('arch=compute_87,code=sm_87')
+            if int(bare_metal_minor) >= 8:
+                cc_flag.append('-gencode')
+                cc_flag.append('arch=compute_89,code=sm_89')
+        if int(bare_metal_major) >= 12:
             cc_flag.append('-gencode')
             cc_flag.append('arch=compute_90,code=sm_90')
 
@@ -33,15 +46,26 @@ def load(args):
     _create_build_dir(buildpath)
 
     # Helper function to build the kernels.
-    def _cpp_extention_load_helper(name, sources, extra_cuda_flags):
+    def _cpp_extention_load_helper(name, sources, extra_cuda_flags, extra_include_paths):
+        if torch.version.hip is not None:
+            extra_cuda_cflags=['-O3',
+                              '--offload-arch=gfx90a',
+                              '--offload-arch=gfx940',
+                              '--offload-arch=gfx941',
+                               '--offload-arch=gfx942',
+                               '-ffast-math'] + extra_cuda_flags + cc_flag
+        else:
+            extra_cuda_cflags=['-O3',
+                               '-gencode', 'arch=compute_70,code=sm_70',
+                               '--use_fast_math'] + extra_cuda_flags + cc_flag
+
         return cpp_extension.load(
             name=name,
             sources=sources,
             build_directory=buildpath,
             extra_cflags=['-O3',],
-            extra_cuda_cflags=['-O3',
-                               '-gencode', 'arch=compute_70,code=sm_70',
-                               '--use_fast_math'] + extra_cuda_flags + cc_flag,
+            extra_cuda_cflags=extra_cuda_cflags,
+            extra_include_paths=extra_include_paths,
             verbose=(args.rank == 0)
         )
 
@@ -49,53 +73,51 @@ def load(args):
     # Fused softmax.
     # ==============
 
+    if torch.version.hip is not None:
+        extra_include_paths=[os.path.abspath(srcpath)]
+    else:
+        extra_include_paths=[]
+
     if args.masked_softmax_fusion:
-        extra_cuda_flags = ['-U__CUDA_NO_HALF_OPERATORS__',
-                            '-U__CUDA_NO_HALF_CONVERSIONS__',
-                            '--expt-relaxed-constexpr',
-                            '--expt-extended-lambda']
+        if torch.version.hip is not None:
+             extra_cuda_flags = ['-D__HIP_NO_HALF_OPERATORS__=1',
+                                 '-D__HIP_NO_HALF_CONVERSIONS__=1']
+        else:
+             extra_cuda_flags = ['-U__CUDA_NO_HALF_OPERATORS__',
+                                 '-U__CUDA_NO_HALF_CONVERSIONS__',
+                                 '--expt-relaxed-constexpr',
+                                 '--expt-extended-lambda']
         
+        # Layer norm CUDA.
+        sources=[srcpath / 'layer_norm_cuda.cpp',
+                 srcpath / 'layer_norm_cuda_kernel.cu']
+        layer_norm_cuda_kernel = _cpp_extention_load_helper(
+            "layer_norm_cuda_kernel", sources, extra_cuda_flags, extra_include_paths)
+
+        # Fused weight gradient dense.
+        sources=[srcpath / 'fused_weight_gradient_dense.cpp',
+                 srcpath / 'fused_weight_gradient_dense.cu']
+        fused_weight_gradient_dense = _cpp_extention_load_helper(
+            "fused_weight_gradient_dense", sources, extra_cuda_flags, extra_include_paths)
+
         # Upper triangular softmax.
         sources=[srcpath / 'scaled_upper_triang_masked_softmax.cpp',
                  srcpath / 'scaled_upper_triang_masked_softmax_cuda.cu']
         scaled_upper_triang_masked_softmax_cuda = _cpp_extention_load_helper(
             "scaled_upper_triang_masked_softmax_cuda",
-            sources, extra_cuda_flags)
+            sources, extra_cuda_flags, extra_include_paths)
 
         # Masked softmax.
         sources=[srcpath / 'scaled_masked_softmax.cpp',
                  srcpath / 'scaled_masked_softmax_cuda.cu']
         scaled_masked_softmax_cuda = _cpp_extention_load_helper(
-            "scaled_masked_softmax_cuda", sources, extra_cuda_flags)
+            "scaled_masked_softmax_cuda", sources, extra_cuda_flags, extra_include_paths)
 
         # Softmax
         sources=[srcpath / 'scaled_softmax.cpp',
                  srcpath / 'scaled_softmax_cuda.cu']
         scaled_softmax_cuda = _cpp_extention_load_helper(
-            "scaled_softmax_cuda", sources, extra_cuda_flags)
-
-    # =================================
-    # Mixed precision fused layer norm.
-    # =================================
-
-    extra_hopper_flags = ['-U__CUDA_NO_HALF_OPERATORS__',
-                          '-U__CUDA_NO_HALF_CONVERSIONS__']
-
-    extra_cuda_flags = ['-maxrregcount=50']
-    sources=[srcpath / 'layer_norm_cuda.cpp',
-             srcpath / 'layer_norm_cuda_kernel.cu']
-    fused_mix_prec_layer_norm_cuda = _cpp_extention_load_helper(
-        "fused_mix_prec_layer_norm_cuda", sources, extra_cuda_flags + extra_hopper_flags)
-
-    # =================================
-    # Fused gradient accumulation to weight gradient computation of linear layer
-    # =================================
-
-    if args.gradient_accumulation_fusion:
-        sources=[srcpath / 'fused_weight_gradient_dense.cpp',
-                 srcpath / 'fused_weight_gradient_dense.cu']
-        fused_dense_cuda = _cpp_extention_load_helper(
-            "fused_dense_cuda", sources, extra_hopper_flags)
+            "scaled_softmax_cuda", sources, extra_cuda_flags, extra_include_paths)
 
 
 def _get_cuda_bare_metal_version(cuda_dir):
