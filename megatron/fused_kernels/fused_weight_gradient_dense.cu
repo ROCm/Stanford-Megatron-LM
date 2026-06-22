@@ -9,7 +9,18 @@
 /* Includes, cuda */
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
+#include <hipblas/hipblas.h>
 
+#define CUDA_R_16BF HIP_R_16BF
+#define CUDA_R_32F HIP_R_32F
+#define CUBLAS_GEMM_DEFAULT_TENSOR_OP HIPBLAS_GEMM_DEFAULT
+#define rocblas_gemmex hipblasGemmEx_v2
+#define rocblas_status hipblasStatus_t
+#define rocblas_handle hipblasHandle_t
+#define rocblas_operation hipblasOperation_t
+#define rocblas_get_stream hipblasGetStream
+#define rocblas_operation_none HIPBLAS_OP_N
+#define rocblas_operation_transpose HIPBLAS_OP_T
 
 // BF16 Tensor core wrapper around cublas GEMMEx
 cublasStatus_t gemmex_wrapper(
